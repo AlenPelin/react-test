@@ -1,62 +1,33 @@
 import React, { createContext, useContext, useState } from 'react';
 
-// watch this first https://www.youtube.com/watch?v=dpw9EHDh2bM
-
-/* customer's section */
-
 // customer's js component
 function MyComponent(props) {
   return (
     <div>
       My Component<br />
-      Data: <i>{props.datasource || err('datasource is missing')}</i>
+      Data: <i>{props.data || err('data is missing')}</i>
       <hr />
     </div>
   );
 }
 
-// customer's data coming from database
-function createUniformContext() {
-  return {
-    page: {
-      id: '123', 
-      name: 'home'
-    },
+// customer's app
+function App() {
+  // will be dynamic i.e. coming from the restful service
+  const initialContext = {
     renderings: [
       {
         id: 'r1',
         component: MyComponent,
-        placeholderKey: '/main',
-        datasource: 'default-ds'
-      },
-      {
-        id: 'r2',
-        component: MyComponent,
-        placeholderKey: '/main',
-        datasource: 'another instance of my component'
-      },
-    ],
-    rules: [
-      {
-        component: 'r1',
-        action: 'change-datasource',
-        datasource: 'thanks for waiting!',
-
-        type: 'timeout',
-        timeout: 3000,
+        data: 'default-data'
       }
     ]
   };
-}
-
-// customer's app
-function App() {
-  const uniformContext = createUniformContext();
 
   return (
     <div className="App">
-      <PersonalizationContext initialContext={uniformContext}>    
-        <Placeholder placeholderKey='/main' />
+      <PersonalizationContext initialContext={initialContext}>    
+        <Placeholder />
       </PersonalizationContext>
     </div>
   );
@@ -64,44 +35,28 @@ function App() {
 
 export default App;
 
-/* ==================================================================================== */
+/* ================ UNIFORM LIBS =================================================================== */
 
-/* our libs section */
-
-// our uniform context class
 const UniformContext = createContext({});
 
 function PersonalizationContext({children, initialContext}) {
   const [ context, setContext ] = useState(initialContext);
-  const { rules, renderings } = context;
+  const { renderings } = context;
   console.log(JSON.stringify(context));
-  
-  rules.forEach(rule => {
-    console.log('Checking rule ' + JSON.stringify(rule));
-    switch (rule.type) {
-      case 'timeout': 
-        const timeout = rule.timeout;
-        if (timeout <= 0 || timeout > 10000) {
-          err('bad-timeout: ' + timeout);
-        }
 
-        const id = rule.component;
-        renderings.filter(r => r.id === id).forEach(r => {
-          console.log('Enabling personalization for component ' + id + ' (timeout: ' + timeout + ')');
+  renderings.forEach(rendering => {
+    console.log('Enabling personalization for component ' + rendering.id);
 
-          setTimeout(() => {
-            console.log('Personalizing component ' + id);
-            r.datasource = rule.datasource;
-            setContext(context);
-            console.log(JSON.stringify(context));
-          }, timeout);
-        });
-        break;
-      default:
-        err('not-supported: ' + rule.type);
-    }
+    setTimeout(() => {
+      console.log('Personalizing component ' + rendering.id);
+      
+      // context.renderings[i].rendering.data = 'personalized data';
+      rendering.data = 'personalized data';
+      setContext(context);
+
+      console.log(JSON.stringify(context));
+    }, 2000);
   });
-
 
   return (
     <UniformContext.Provider value={context}>    
@@ -110,20 +65,13 @@ function PersonalizationContext({children, initialContext}) {
   );
 }
 
-// our placeholder logic
-function Placeholder({placeholderKey}) {
-  const uniformContext = useContext(UniformContext);
-  const renderings = [];
-  uniformContext.renderings.forEach(r => {
-    if (r.placeholderKey === placeholderKey) {
-      renderings.push(r);
-    }
-  });
+function Placeholder() {
+  const context = useContext(UniformContext);
 
-  return renderings.map(r => React.createElement(r.component,  { key: r.id, datasource: r.datasource }));
+  return context.renderings.map(r => 
+    React.createElement(r.component,  { key: r.id, data: r.data })
+  );
 }
-
-// helpers, not interesting
 
 function err(msg) {
   throw new Error(msg);
