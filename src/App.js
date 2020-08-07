@@ -52,7 +52,7 @@ function PersonalizationContext({children, initialContext}) {
       
       // context.renderings[i].rendering.data = 'personalized data';
       rendering.data = 'personalized data';
-      setContext(context);
+      setContext({renderings});
 
       console.log(JSON.stringify(context));
     }, 2000);
